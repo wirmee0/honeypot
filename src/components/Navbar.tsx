@@ -8,7 +8,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-3">
             <div className="relative group">
-              <img src="/logo.jpg" alt="logo" className="w-10 h-10 rounded-full shadow-md transition-transform group-hover:scale-110" />
+              <img src="/logo.jpeg" alt="logo" className="w-10 h-10 rounded-full shadow-md transition-transform group-hover:scale-110" />
               <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full blur opacity-0 group-hover:opacity-75 transition duration-200"></div>
             </div>
             <div>
