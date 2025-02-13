@@ -385,7 +385,7 @@ async function checkLiquidity(contract: ethers.Contract, network: string) {
         'function token1() external view returns (address)',
         'function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)'
       ],
-      provider // Use the new provider
+      provider
     );
 
     // Create token contract with new provider
@@ -400,8 +400,8 @@ async function checkLiquidity(contract: ethers.Contract, network: string) {
     const reserves = await pairContract.getReserves();
     const tokenDecimals = await tokenContract.decimals();
     
-    // Calculate liquidity
-    const tokenReserve = token0.toLowerCase() === contract.target.toLowerCase() ? 
+    // Calculate liquidity - Fix the comparison
+    const tokenReserve = String(token0).toLowerCase() === String(contract.target).toLowerCase() ? 
       reserves[0] : reserves[1];
     
     const liquidityAmount = Number(tokenReserve) / (10 ** tokenDecimals);
