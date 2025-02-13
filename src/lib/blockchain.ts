@@ -371,25 +371,40 @@ async function checkLiquidity(contract: ethers.Contract, network: string) {
       return { safe: false, message: 'No liquidity pool found', value: 0 };
     }
 
-    // Get pair contract
-    const pairContract = new ethers.Contract(pairAddress, [
-      'function token0() external view returns (address)',
-      'function token1() external view returns (address)',
-      'function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)'
-    ], contract.provider);
+    // Create a new provider for production
+    const provider = new ethers.JsonRpcProvider('https://sepolia.unichain.org', {
+      chainId: NETWORK_CONFIG[network].chainId,
+      name: NETWORK_CONFIG[network].name
+    });
+
+    // Get pair contract with new provider
+    const pairContract = new ethers.Contract(
+      pairAddress,
+      [
+        'function token0() external view returns (address)',
+        'function token1() external view returns (address)',
+        'function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)'
+      ],
+      provider // Use the new provider
+    );
+
+    // Create token contract with new provider
+    const tokenContract = new ethers.Contract(
+      contract.target,
+      ['function decimals() view returns (uint8)'],
+      provider
+    );
 
     // Get token positions
     const token0 = await pairContract.token0();
     const reserves = await pairContract.getReserves();
+    const tokenDecimals = await tokenContract.decimals();
     
     // Calculate liquidity
-    const tokenDecimals = await contract.decimals();
     const tokenReserve = token0.toLowerCase() === contract.target.toLowerCase() ? 
       reserves[0] : reserves[1];
     
     const liquidityAmount = Number(tokenReserve) / (10 ** tokenDecimals);
-    
-    // Consider safe if liquidity > 1000 tokens
     const isSafe = liquidityAmount >= 1000;
     
     return {
