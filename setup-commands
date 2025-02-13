@@ -1,0 +1,7 @@
+npx create-next-app@latest honeypot-detector --typescript --tailwind --eslint
+cd honeypot-detector
+npm install @shadcn/ui @radix-ui/react-dropdown-menu @radix-ui/react-navigation-menu @radix-ui/react-select axios ethers 
+npx shadcn-ui@latest init
+npx shadcn-ui@latest add select
+npx shadcn-ui@latest add button
+npx shadcn-ui@latest add input 
