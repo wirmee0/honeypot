@@ -15,33 +15,33 @@ interface TokenSearchProps {
 }
 
 export const TokenSearch: React.FC<TokenSearchProps> = () => {
-  const [tokenAddress, setTokenAddress] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [results, setResults] = useState<any>(null);
-  const [error, setError] = useState<string>('');
+  const [address, setAddress] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [network, setNetwork] = useState<NetworkType>('unichainSepolia');
 
   const networkConfig = NETWORK_CONFIG[network];
 
   const handleSearch = async (): Promise<void> => {
-    if (!tokenAddress.trim()) {
+    if (!address.trim()) {
       setError('Please enter a token address');
       return;
     }
 
-    if (!ethers.isAddress(tokenAddress)) {
+    if (!ethers.isAddress(address)) {
       setError('Invalid address format');
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setResults(null);
+    setIsLoading(true);
+    setError(null);
+    setResult(null);
 
     try {
       console.log(`Analyzing token on ${network} (Chain ID: ${networkConfig.chainId})...`);
-      const result = await checkHoneypot(tokenAddress, network);
-      setResults(result);
+      const result = await checkHoneypot(address, network);
+      setResult(result);
     } catch (error: unknown) {
       console.error('Analysis error:', error);
       let errorMessage = 'Error analyzing token';
@@ -61,60 +61,69 @@ export const TokenSearch: React.FC<TokenSearchProps> = () => {
       }
       
       setError(errorMessage);
-      setResults(null);
+      setResult(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleNetworkChange = (newNetwork: NetworkType) => {
     setNetwork(newNetwork);
-    setResults(null);
-    setError('');
+    setResult(null);
+    setError(null);
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="backdrop-blur-xl bg-secondary/20 p-6 rounded-2xl border border-primary/10 shadow-lg">
-        <div className="flex gap-4 mb-4 items-center">
-          <NetworkSelector 
-            value={network} 
-            onChange={handleNetworkChange}
-          />
-          <span className="text-sm text-gray-400">
-            Chain ID: {networkConfig.chainId}
-          </span>
-        </div>
-        
-        <div className="relative">
-          <Input
-            placeholder="Paste token address here..."
-            value={tokenAddress}
-            onChange={(e) => setTokenAddress(e.target.value)}
-            className="bg-secondary/40 border-primary/20 text-white pl-12 h-14 text-lg rounded-xl"
-          />
-          <Search className="absolute left-4 top-4 text-primary/60 w-6 h-6" />
-          <Button 
-            onClick={handleSearch}
-            disabled={loading}
-            className="absolute right-2 top-2 bg-primary hover:bg-primary-light text-secondary font-bold h-10 rounded-lg"
-          >
-            {loading ? 'Analyzing...' : 'Check Token'}
-          </Button>
-        </div>
-        {error && (
-          <div className="mt-4 p-4 bg-red-500/10 rounded-xl border border-red-500/20 flex items-center gap-2">
-            <AlertCircle className="text-red-500 w-5 h-5" />
-            <p className="text-red-400">{error}</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-secondary/20 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-primary/10">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-primary/10">
+            <div className="flex items-center gap-3">
+              <NetworkSelector 
+                value={network} 
+                onChange={handleNetworkChange}
+              />
+              <span className="text-sm text-primary/60">
+                Chain ID: {networkConfig.chainId}
+              </span>
+            </div>
           </div>
-        )}
-      </div>
 
-      {(loading || results) && (
-        <div className="backdrop-blur-xl bg-secondary/20 rounded-2xl border border-primary/10 shadow-lg">
-          <TokenAnalysis loading={loading} results={results} />
+          <h2 className="text-xl font-semibold text-primary mb-6 text-center">
+            Check Token Safety
+          </h2>
+          
+          <div className="relative">
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Enter token address..."
+              className="w-full px-4 py-3 bg-secondary/30 rounded-xl border border-primary/20 text-primary placeholder-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+            />
+            <button
+              onClick={handleSearch}
+              disabled={isLoading || !address}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium transition-all
+                ${isLoading || !address ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:-translate-y-0.5'}`}
+            >
+              {isLoading ? 'Checking...' : 'Check'}
+            </button>
+          </div>
+
+          {error && (
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+              {error}
+            </div>
+          )}
+
+          {result && (
+            <div className="mt-6">
+              <TokenAnalysis result={result} />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }; 
