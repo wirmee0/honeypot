@@ -344,7 +344,9 @@ async function checkSellTax(contract: ethers.Contract) {
       sellTax = await contract.sellFee();
       sellTax = Number(sellTax) / 100;
     } catch {
-      const bytecode = await contract.runner.provider.getCode(contract.target);
+      // Use provider directly instead of contract.runner
+      const provider = contract.provider as ethers.JsonRpcProvider;
+      const bytecode = await provider.getCode(contract.target);
       sellTax = analyzeBytecodeForFees(bytecode);
     }
 
@@ -426,7 +428,9 @@ async function checkOwnershipRenounced(contract: ethers.Contract) {
 
 async function checkBlacklist(contract: ethers.Contract) {
   try {
-    const bytecode = await contract.runner.provider.getCode(contract.target);
+    // Use provider directly
+    const provider = contract.provider as ethers.JsonRpcProvider;
+    const bytecode = await provider.getCode(contract.target);
     const hasBlacklistFunction = checkForBlacklistFunctions(bytecode);
 
     return {
@@ -440,7 +444,9 @@ async function checkBlacklist(contract: ethers.Contract) {
 
 async function checkTransferPause(contract: ethers.Contract) {
   try {
-    const bytecode = await contract.runner.provider.getCode(contract.target);
+    // Use provider directly
+    const provider = contract.provider as ethers.JsonRpcProvider;
+    const bytecode = await provider.getCode(contract.target);
     const hasPauseFunction = checkForPauseFunctions(bytecode);
 
     return {
