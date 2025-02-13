@@ -533,23 +533,29 @@ async function findPairAddress(contract: ethers.Contract, network: string): Prom
       token: contract.target
     });
 
-    // Use the provider directly instead of runner
+    // Create a new provider instance
+    const provider = new ethers.JsonRpcProvider('https://sepolia.unichain.org', {
+      chainId: NETWORK_CONFIG[network].chainId,
+      name: NETWORK_CONFIG[network].name
+    });
+
+    // Create factory contract with new provider
     const factoryContract = new ethers.Contract(
       FACTORY_ADDRESS,
       ['function getPair(address,address) view returns (address)'],
-      contract.provider // Use provider instead of runner
+      provider
     );
 
     try {
       // Try token/WETH order
-      const pair = await factoryContract.getPair(contract.target, wethAddress).catch(() => null);
+      const pair = await factoryContract.getPair(contract.target, wethAddress);
       if (pair && pair !== '0x0000000000000000000000000000000000000000') {
         console.log('Found pair:', pair);
         return pair;
       }
 
       // Try WETH/token order
-      const pairReverse = await factoryContract.getPair(wethAddress, contract.target).catch(() => null);
+      const pairReverse = await factoryContract.getPair(wethAddress, contract.target);
       if (pairReverse && pairReverse !== '0x0000000000000000000000000000000000000000') {
         console.log('Found pair (reverse order):', pairReverse);
         return pairReverse;
