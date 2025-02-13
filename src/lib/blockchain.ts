@@ -204,8 +204,7 @@ export const checkHoneypot = async (tokenAddress: string, network: string) => {
       try {
         provider = new ethers.JsonRpcProvider(url, {
           chainId: networkConfig.chainId,
-          name: networkConfig.name,
-          skipFetchSetup: false  // Changed to false to ensure proper connection
+          name: networkConfig.name
         });
 
         // Test the connection with timeout
