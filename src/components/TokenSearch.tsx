@@ -3,25 +3,44 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TokenAnalysis } from './TokenAnalysis';
-import { checkHoneypot, NETWORK_CONFIG, type NetworkConfig } from '@/lib/blockchain';
+import { checkHoneypot, NETWORK_CONFIG } from '@/lib/blockchain';
 import { ethers } from 'ethers';
 import { Search, AlertCircle } from 'lucide-react';
 import { NetworkSelector } from './NetworkSelector';
 
+// Define proper types
 type NetworkType = keyof typeof NETWORK_CONFIG;
 
 interface TokenSearchProps {
   className?: string;
 }
 
+interface TokenResult {
+  canTransfer: { safe: boolean; message: string };
+  hasBlacklist: { safe: boolean; message: string };
+  hasPauseFunction: { safe: boolean; message: string };
+  hasOwner: { safe: boolean; message: string };
+  hasSellRestriction: { safe: boolean; message: string };
+  hasAntiWhale: { safe: boolean; message: string };
+  liquidity: { safe: boolean; message: string; value: number };
+  error: string | null;
+  isHoneypot: boolean;
+}
+
 export const TokenSearch: React.FC<TokenSearchProps> = () => {
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<TokenResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [network, setNetwork] = useState<NetworkType>('unichainSepolia');
 
   const networkConfig = NETWORK_CONFIG[network];
+
+  const handleNetworkChange = (newNetwork: NetworkType) => {
+    setNetwork(newNetwork);
+    setResult(null);
+    setError(null);
+  };
 
   const handleSearch = async (): Promise<void> => {
     if (!address.trim()) {
@@ -41,7 +60,7 @@ export const TokenSearch: React.FC<TokenSearchProps> = () => {
     try {
       console.log(`Analyzing token on ${network} (Chain ID: ${networkConfig.chainId})...`);
       const result = await checkHoneypot(address, network);
-      setResult(result);
+      setResult(result as TokenResult);
     } catch (error: unknown) {
       console.error('Analysis error:', error);
       let errorMessage = 'Error analyzing token';
@@ -65,12 +84,6 @@ export const TokenSearch: React.FC<TokenSearchProps> = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleNetworkChange = (newNetwork: NetworkType) => {
-    setNetwork(newNetwork);
-    setResult(null);
-    setError(null);
   };
 
   return (
