@@ -187,7 +187,7 @@ const FACTORY_ADDRESSES = {
   polygon: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',
   arbitrum: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
   unichain: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-  unichainSepolia: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'  // Verify this is correct
+  unichainSepolia: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'  // Verify this is correc
 } as const;
 
 export const checkHoneypot = async (tokenAddress: string, network: string) => {
