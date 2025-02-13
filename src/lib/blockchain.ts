@@ -315,7 +315,7 @@ async function checkBuyTax(contract: ethers.Contract, network: string) {
       if (!address) continue;
 
       try {
-        const tax = await simulateBuyTax(contract, address, version);
+        const tax = await simulateBuyTax(contract, address, version, network);
         if (tax < bestTax) {
           bestTax = tax;
           routerUsed = version;
@@ -327,7 +327,7 @@ async function checkBuyTax(contract: ethers.Contract, network: string) {
     }
 
     return {
-      safe: bestTax <= 10, // Consider unsafe if tax > 10%
+      safe: bestTax <= 10,
       message: bestTax > 10 ? `High buy tax: ${bestTax.toFixed(2)}% (${routerUsed})` : '',
       tax: Number(bestTax.toFixed(2))
     };
@@ -649,42 +649,69 @@ function contains(bytecode: string, pattern: string, offset: number): boolean {
 async function simulateBuyTax(
   contract: ethers.Contract, 
   routerAddress: string, 
-  version: string
+  version: string,
+  network: string
 ): Promise<number> {
   try {
+    // Create a new provider instance
+    const provider = new ethers.JsonRpcProvider('https://sepolia.unichain.org', {
+      chainId: NETWORK_CONFIG[network].chainId,
+      name: NETWORK_CONFIG[network].name
+    });
+
     if (version === 'v2') {
-      // V2 logic remains the same
+      // V2 logic with new provider
       const routerABI = [
         'function getAmountsOut(uint amountIn, address[] memory path) view returns (uint[] memory amounts)',
         'function WETH() view returns (address)'
       ];
-      const router = new ethers.Contract(routerAddress, routerABI, contract.provider);
+      const router = new ethers.Contract(routerAddress, routerABI, provider);
+      
+      // Create token contract with new provider
+      const tokenContract = new ethers.Contract(
+        contract.target,
+        ['function balanceOf(address) view returns (uint256)'],
+        provider
+      );
+
       const wethAddress = await router.WETH();
       const amountIn = ethers.parseEther('1');
-      const path = [wethAddress, await contract.getAddress()];
+      const path = [wethAddress, contract.target];
       const amounts = await router.getAmountsOut(amountIn, path);
-      return calculateTax(amounts[1], await contract.balanceOf(ethers.ZeroAddress));
+      return calculateTax(amounts[1], await tokenContract.balanceOf(ethers.ZeroAddress));
     } 
     else if (version === 'v3') {
-      // Use Quoter contract for V3
+      // Use Quoter contract for V3 with new provider
       const quoter = new ethers.Contract(
         process.env.UNICHAIN_SEPOLIA_QUOTER_V3!,
         QUOTER_ABI,
-        contract.provider
+        provider
       );
-      const router = new ethers.Contract(routerAddress, ['function WETH9() view returns (address)'], contract.provider);
+      
+      const router = new ethers.Contract(
+        routerAddress, 
+        ['function WETH9() view returns (address)'], 
+        provider
+      );
+
+      // Create token contract with new provider
+      const tokenContract = new ethers.Contract(
+        contract.target,
+        ['function balanceOf(address) view returns (uint256)'],
+        provider
+      );
+
       const wethAddress = await router.WETH9();
       const amountIn = ethers.parseEther('1');
       const expectedOut = await quoter.quoteExactInputSingle(
         wethAddress,
-        await contract.getAddress(),
+        contract.target,
         3000, // Default fee tier
         amountIn,
         0
       );
-      return calculateTax(expectedOut, await contract.balanceOf(ethers.ZeroAddress));
+      return calculateTax(expectedOut, await tokenContract.balanceOf(ethers.ZeroAddress));
     }
-    // V4 implementation can be added later
     return 0;
   } catch (error) {
     console.error(`Error in ${version} tax simulation:`, error);
