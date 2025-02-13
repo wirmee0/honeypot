@@ -344,9 +344,11 @@ async function checkSellTax(contract: ethers.Contract) {
       sellTax = await contract.sellFee();
       sellTax = Number(sellTax) / 100;
     } catch {
-      // Use provider directly instead of contract.runner
-      const provider = contract.provider as ethers.JsonRpcProvider;
-      const bytecode = await provider.getCode(contract.target);
+      // Get provider safely
+      if (!contract.provider || !(contract.provider instanceof ethers.JsonRpcProvider)) {
+        throw new Error('Invalid provider');
+      }
+      const bytecode = await contract.provider.getCode(contract.target);
       sellTax = analyzeBytecodeForFees(bytecode);
     }
 
@@ -428,9 +430,11 @@ async function checkOwnershipRenounced(contract: ethers.Contract) {
 
 async function checkBlacklist(contract: ethers.Contract) {
   try {
-    // Use provider directly
-    const provider = contract.provider as ethers.JsonRpcProvider;
-    const bytecode = await provider.getCode(contract.target);
+    // Get provider safely
+    if (!contract.provider || !(contract.provider instanceof ethers.JsonRpcProvider)) {
+      throw new Error('Invalid provider');
+    }
+    const bytecode = await contract.provider.getCode(contract.target);
     const hasBlacklistFunction = checkForBlacklistFunctions(bytecode);
 
     return {
@@ -444,9 +448,11 @@ async function checkBlacklist(contract: ethers.Contract) {
 
 async function checkTransferPause(contract: ethers.Contract) {
   try {
-    // Use provider directly
-    const provider = contract.provider as ethers.JsonRpcProvider;
-    const bytecode = await provider.getCode(contract.target);
+    // Get provider safely
+    if (!contract.provider || !(contract.provider instanceof ethers.JsonRpcProvider)) {
+      throw new Error('Invalid provider');
+    }
+    const bytecode = await contract.provider.getCode(contract.target);
     const hasPauseFunction = checkForPauseFunctions(bytecode);
 
     return {
