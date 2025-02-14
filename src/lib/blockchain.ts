@@ -147,7 +147,7 @@ const DETECTOR_ABI = [
 ] as const;
 
 const DETECTOR_ADDRESSES = {
-  polygon: '0x...',
+  polygon: '0x525fB7b46F903FEB5d1D34DEDf4A2712657D602A',
   arbitrum: '0x...',
   unichain: '0x...',
   unichainSepolia: '0xB1FFBAB3836908459f6f0f795dd1D978e9CB8818'

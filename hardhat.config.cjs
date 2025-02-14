@@ -36,7 +36,7 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      polygon: process.env.VITE_ETHERSCAN_API_KEY,
+      polygon: process.env.VITE_POLYGONSCAN_API_KEY,
       arbitrum: process.env.VITE_ETHERSCAN_API_KEY,
       unichain: process.env.VITE_UNICHAIN_EXPLORER_API_KEY,
       unichainSepolia: process.env.VITE_UNICHAIN_EXPLORER_API_KEY,
