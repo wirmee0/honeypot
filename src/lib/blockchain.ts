@@ -71,12 +71,17 @@ export const NETWORK_CONFIG: Record<string, NetworkConfig> = {
 
 // Update RPC endpoints with fallbacks
 const RPC_URLS = {
-  polygon: [process.env.POLYGON_RPC!],
+  polygon: [
+    'https://polygon-rpc.com',
+    'https://rpc-mainnet.matic.network',
+    'https://matic-mainnet.chainstacklabs.com',
+    process.env.POLYGON_RPC!
+  ],
   arbitrum: [process.env.ARBITRUM_RPC!],
   unichain: [process.env.UNICHAIN_MAINNET_RPC!],
   unichainSepolia: [
-    'https://sepolia.unichain.org',  // Primary RPC
-    process.env.UNICHAIN_SEPOLIA_RPC!,  // Fallback
+    'https://sepolia.unichain.org',
+    process.env.UNICHAIN_SEPOLIA_RPC!,
   ]
 };
 
@@ -189,6 +194,31 @@ const FACTORY_ADDRESSES = {
   unichain: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
   unichainSepolia: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'  // Verify this is correc
 } as const;
+
+// Update the provider creation to use network-specific URLs
+async function createProvider(network: string) {
+  const networkConfig = NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG];
+  const urls = RPC_URLS[network as keyof typeof RPC_URLS];
+  
+  for (const url of urls) {
+    try {
+      const provider = new ethers.JsonRpcProvider(url, {
+        chainId: networkConfig.chainId,
+        name: networkConfig.name
+      });
+
+      // Test the connection
+      await provider.getNetwork();
+      console.log(`Connected to ${network} via ${url}`);
+      return provider;
+    } catch (e) {
+      console.log(`Failed to connect to ${url}:`, e);
+      continue;
+    }
+  }
+  
+  throw new Error(`Unable to connect to ${network}. Please try again later.`);
+}
 
 export const checkHoneypot = async (tokenAddress: string, network: string) => {
   try {
@@ -362,6 +392,7 @@ async function checkSellTax(contract: ethers.Contract) {
   }
 }
 
+// Update the checkLiquidity function to use the new provider creation
 async function checkLiquidity(contract: ethers.Contract, network: string) {
   try {
     const pairAddress = await findPairAddress(contract, network);
@@ -371,11 +402,8 @@ async function checkLiquidity(contract: ethers.Contract, network: string) {
       return { safe: false, message: 'No liquidity pool found', value: 0 };
     }
 
-    // Create a new provider for production
-    const provider = new ethers.JsonRpcProvider('https://sepolia.unichain.org', {
-      chainId: NETWORK_CONFIG[network].chainId,
-      name: NETWORK_CONFIG[network].name
-    });
+    // Use the new provider creation function
+    const provider = await createProvider(network);
 
     // Get pair contract with new provider
     const pairContract = new ethers.Contract(
